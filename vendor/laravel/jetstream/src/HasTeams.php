@@ -55,10 +55,9 @@ trait HasTeams
      */
     public function teams()
     {
-        return $this->belongsToMany(Jetstream::teamModel())
+        return $this->belongsToMany(Jetstream::teamModel(), Jetstream::membershipModel())
                         ->withPivot('role')
                         ->withTimestamps()
-                        ->using(Jetstream::membershipModel())
                         ->as('membership');
     }
 
@@ -115,6 +114,24 @@ trait HasTeams
         return Jetstream::findRole($team->users->where(
             'id', $this->id
         )->first()->membership->role);
+    }
+
+    /**
+     * Determine if the user has the given role on the given team.
+     *
+     * @param  mixed  $team
+     * @param  string  $role
+     * @return bool
+     */
+    public function hasTeamRole($team, string $role)
+    {
+        if ($this->ownsTeam($team)) {
+            return true;
+        }
+
+        return $this->belongsToTeam($team) && optional(Jetstream::findRole($team->users->where(
+            'id', $this->id
+        )->first()->membership->role))->key === $role;
     }
 
     /**
